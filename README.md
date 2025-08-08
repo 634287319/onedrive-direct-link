@@ -14,7 +14,7 @@
 - ✅ **智能链接识别**: 自动识别文件夹链接并提示
 - ✅ **现代化网页界面**: 响应式设计，支持深色模式
 - ✅ **命令行工具**: 支持批量处理和脚本集成
-
+![图片描述](https://raw.githubusercontent.com/634287319/onedrive-direct-link/refs/heads/main/%E7%BD%91%E7%AB%99%E5%9B%BE%E7%89%87.png)
 ## 安装
 
 ### 环境要求
@@ -110,5 +110,6 @@ waitress-serve --host=0.0.0.0 --port=5000 "OneDrive:app"
 ```
 
 ## 许可证
+
 
 MIT License

@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="zh-cn">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OneDrive 直链解析</title>
+    <style>
+      :root { 
+        color-scheme: light dark; 
+        --primary-color: #1668dc;
+        --primary-hover: #0958d9;
+        --error-color: #ff4d4f;
+        --success-color: #52c41a;
+        --border-color: #d9d9d9;
+        --text-secondary: #666;
+        --bg-card: #fff;
+        --shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --border-color: #424242;
+          --text-secondary: #bbb;
+          --bg-card: #1f1f1f;
+          --shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+      }
+      
+      * { box-sizing: border-box; }
+      
+      body { 
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        margin: 0;
+        padding: 2rem 1rem;
+        line-height: 1.6;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+      
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: var(--bg-card);
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: var(--shadow);
+      }
+      
+      h1 { 
+        font-size: 2rem; 
+        margin: 0 0 0.5rem;
+        color: var(--primary-color);
+        text-align: center;
+      }
+      
+      .subtitle {
+        text-align: center;
+        color: var(--text-secondary);
+        margin-bottom: 2rem;
+        font-size: 1rem;
+      }
+      
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+      
+      label { 
+        display: block; 
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #333;
+      }
+      
+      input[type="text"], input[type="number"] { 
+        width: 100%; 
+        padding: 0.75rem 1rem; 
+        border: 2px solid var(--border-color); 
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+      }
+      
+      input[type="text"]:focus, input[type="number"]:focus {
+        outline: none;
+        border-color: var(--primary-color);
+      }
+      
+
+      
+      .btn {
+        width: 100%;
+        padding: 0.75rem 1.5rem; 
+        border: none; 
+        border-radius: 8px; 
+        background: var(--primary-color); 
+        color: white; 
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 500;
+        transition: background-color 0.3s ease;
+        margin-top: 1rem;
+      }
+      
+      .btn:hover { 
+        background: var(--primary-hover);
+      }
+      
+      .btn:active {
+        transform: translateY(1px);
+      }
+      
+      .card { 
+        margin-top: 2rem; 
+        padding: 1.5rem; 
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+      }
+      
+      .error { 
+        background: #fff2f0;
+        border-color: var(--error-color);
+        color: var(--error-color);
+      }
+      
+      .success {
+        background: #f6ffed;
+        border-color: var(--success-color);
+      }
+      
+      .result-url {
+        background: #f5f5f5;
+        padding: 1rem;
+        border-radius: 6px;
+        margin: 1rem 0;
+        word-break: break-all;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 0.9rem;
+        border: 1px solid var(--border-color);
+      }
+      
+      .result-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+      
+      .btn-secondary {
+        background: #6c757d;
+        color: white;
+        text-decoration: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: background-color 0.3s ease;
+      }
+      
+      .btn-secondary:hover {
+        background: #5a6268;
+        text-decoration: none;
+        color: white;
+      }
+      
+      .copy-btn {
+        background: var(--success-color);
+      }
+      
+      .copy-btn:hover {
+        background: #389e0d;
+      }
+      
+      .notice {
+        margin-top: 2rem;
+        padding: 1rem;
+        background: #f0f8ff;
+        border-left: 4px solid var(--primary-color);
+        border-radius: 0 8px 8px 0;
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+      }
+      
+      .history-container {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        background: #f8f9fa;
+      }
+      
+      .history-item {
+        padding: 15px;
+        border-bottom: 1px solid #e9ecef;
+        background: white;
+        margin-bottom: 1px;
+        transition: background-color 0.2s ease;
+      }
+      
+      .history-item:hover {
+        background: #f0f8ff;
+      }
+      
+      .history-item:last-child {
+        border-bottom: none;
+      }
+      
+      .history-time {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-bottom: 5px;
+      }
+      
+      .history-remark-container {
+        margin-bottom: 8px;
+      }
+      
+      .history-remark {
+        font-weight: bold;
+        color: var(--primary-color);
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+        display: inline-block;
+        min-width: 100px;
+        border: 1px solid transparent;
+      }
+      
+      .history-remark:hover {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+      }
+      
+      .history-remark-input {
+        width: 100%;
+        padding: 4px 8px;
+        border: 1px solid #007bff;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: bold;
+        background-color: white;
+        outline: none;
+        color: var(--primary-color);
+      }
+      
+      .history-url {
+        font-family: monospace;
+        font-size: 0.85rem;
+        background: #f8f9fa;
+        padding: 5px 8px;
+        border-radius: 4px;
+        word-break: break-all;
+        margin-bottom: 8px;
+      }
+      
+      .history-actions {
+        display: flex;
+        gap: 10px;
+      }
+      
+      .history-btn {
+        padding: 4px 8px;
+        font-size: 0.8rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+      }
+      
+      .history-copy {
+        background: var(--success-color);
+        color: white;
+      }
+      
+      .history-download {
+        background: var(--primary-color);
+        color: white;
+      }
+      
+      .history-delete {
+        background: #dc3545;
+        color: white;
+      }
+      
+              @media (max-width: 768px) {
+        body { padding: 1rem 0.5rem; }
+        .container { padding: 1.5rem; }
+        .result-actions { flex-direction: column; }
+        h1 { font-size: 1.5rem; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>OneDrive 直链解析</h1>
+      <p class="subtitle">支持个人版、海外企业版、世纪互联版 OneDrive/SharePoint 分享链接</p>
+      
+      <form method="post">
+        <div class="form-group">
+          <label for="share_url">分享链接</label>
+          <input 
+            type="text" 
+            id="share_url" 
+            name="share_url" 
+            placeholder="粘贴 OneDrive/SharePoint 分享链接..." 
+            value="{{ form.get('share_url','') }}" 
+            required 
+            ondblclick="clearUrlInput()"
+          />
+        </div>
+
+
+
+        <button type="submit" class="btn">解析直链</button>
+      </form>
+
+      {% if error %}
+      <div class="card error">
+        <strong>❌ 解析失败</strong><br>
+        {{ error }}
+      </div>
+      {% endif %}
+
+      {% if result %}
+      <div class="card success">
+        <div><strong>✅ 解析成功</strong></div>
+        <div class="result-url">{{ result }}</div>
+        <div class="result-actions">
+          <button class="btn-secondary copy-btn" onclick="copyToClipboard('{{ result }}')">复制链接</button>
+          <a href="{{ result }}" download class="btn-secondary">下载文件</a>
+        </div>
+        
+        <!-- 添加备注功能 -->
+        <div style="margin-top: 15px;">
+          <label for="remark" style="display: block; margin-bottom: 5px; font-weight: bold;">文件备注（必填）：</label>
+          <input type="text" id="remark" placeholder="请输入文件名或备注信息" style="width: 70%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" required>
+          <button onclick="saveToHistoryWithValidation('{{ result }}')" class="btn-secondary" style="margin-left: 10px;">保存到历史</button>
+        </div>
+        {% if 'dlink.host/1drv/' in result %}
+        <div style="margin-top: 15px; padding: 10px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 5px; font-size: 0.9em;">
+          <p><strong>🎉 真正的无登录直链：</strong></p>
+          <p>使用 <code>dlink.host</code> 服务生成，通过提取 <code>redeem</code> 参数实现。这是目前最有效的个人版OneDrive直链生成方法！</p>
+          <p style="margin-top: 8px; font-size: 0.85em; color: #0c5460;">
+            <strong>优势：</strong>无需登录、支持直接下载、兼容性强
+          </p>
+        </div>
+        {% elif 'onedrive.live.com' in result %}
+          {% if 'download?resid=' in result %}
+        <div style="margin-top: 15px; padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px; font-size: 0.9em;">
+          <p><strong>✨ 优化直链：</strong></p>
+          <p>生成了优化的个人版OneDrive直链，使用传统的resid+authkey格式。</p>
+        </div>
+          {% elif 'download=1' in result %}
+        <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; font-size: 0.9em;">
+          <p><strong>⚠️ 传统格式：</strong></p>
+          <p>生成的是传统格式直链，可能需要登录。建议检查原始链接是否为公开分享链接。</p>
+        </div>
+          {% endif %}
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- 历史记录区域 -->
+      <div id="history-section" style="margin-top: 2rem;">
+        <h3 style="color: var(--primary-color); margin-bottom: 1rem;">📋 解析历史</h3>
+        
+        <!-- 搜索框 -->
+        <div style="margin-bottom: 1rem;">
+          <input type="text" id="search-input" placeholder="搜索备注名..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;" oninput="searchHistory()">
+        </div>
+        
+        <div id="history-list" class="history-container">
+          <!-- 历史记录将在这里显示 -->
+        </div>
+      </div>
+
+      <div class="notice">
+        <strong>使用说明：</strong>
+        <ul style="margin: 0.5rem 0 0; padding-left: 1.2rem;">
+          <li>仅支持文件分享链接，文件夹链接无法生成直链</li>
+          <li>世纪互联和企业版直接生成 <code>/_layouts/52/download.aspx</code> 格式的直链，无需登录</li>
+          <li>个人版优先使用 <code>dlink.host</code> 服务生成真正的无登录直链</li>
+          <li><strong>解析成功后链接会自动复制到剪贴板（静默复制）</strong></li>
+          <li><strong>必须填写文件备注后才能保存到历史记录</strong></li>
+          <li>可以在搜索框中输入关键词搜索历史记录</li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      // 历史记录管理
+      let historyData = JSON.parse(localStorage.getItem('onedrive-history') || '[]');
+      
+      // 显示Toast提示（替代alert）
+      function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.textContent = message;
+        
+        const colors = {
+          success: { bg: '#28a745', color: 'white' },
+          error: { bg: '#dc3545', color: 'white' },
+          info: { bg: '#17a2b8', color: 'white' }
+        };
+        
+        const color = colors[type] || colors.success;
+        
+        toast.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: ${color.bg};
+          color: ${color.color};
+          padding: 12px 20px;
+          border-radius: 6px;
+          z-index: 10000;
+          font-size: 14px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          animation: slideInRight 0.3s ease;
+          max-width: 300px;
+          word-wrap: break-word;
+        `;
+        
+        // 添加动画样式
+        if (!document.getElementById('toast-style')) {
+          const style = document.createElement('style');
+          style.id = 'toast-style';
+          style.textContent = `
+            @keyframes slideInRight {
+              from { transform: translateX(100%); opacity: 0; }
+              to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+              from { transform: translateX(0); opacity: 1; }
+              to { transform: translateX(100%); opacity: 0; }
+            }
+          `;
+          document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(toast);
+        
+        // 3秒后自动消失
+        setTimeout(() => {
+          toast.style.animation = 'slideOutRight 0.3s ease';
+          setTimeout(() => {
+            if (toast.parentNode) {
+              toast.parentNode.removeChild(toast);
+            }
+          }, 300);
+        }, 3000);
+      }
+      
+      // 静默复制到剪贴板（用于自动复制）
+      async function silentCopyToClipboard(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch (err) {
+          // 降级方案 - 静默执行
+          const textArea = document.createElement('textarea');
+          textArea.value = text;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+        }
+      }
+      
+      // 复制到剪贴板（用于手动点击复制按钮）
+      async function copyToClipboard(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          const btn = event.target;
+          const originalText = btn.textContent;
+          btn.textContent = '已复制!';
+          btn.style.background = '#52c41a';
+          setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.background = '#52c41a';
+          }, 2000);
+        } catch (err) {
+          // 降级方案
+          const textArea = document.createElement('textarea');
+          textArea.value = text;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+          showToast('链接已复制到剪贴板');
+        }
+      }
+      
+      // 带验证的保存到历史记录
+      function saveToHistoryWithValidation(url) {
+        const remarkInput = document.getElementById('remark');
+        const remark = remarkInput.value.trim();
+        
+        if (!remark) {
+          showToast('请先填写文件备注！', 'error');
+          remarkInput.focus();
+          remarkInput.style.borderColor = '#dc3545';
+          return;
+        }
+        
+        // 重置边框颜色
+        remarkInput.style.borderColor = '#ddd';
+        
+        saveToHistory(url, remark);
+        
+        // 清空输入框
+        remarkInput.value = '';
+      }
+      
+      // 保存到历史记录
+      function saveToHistory(url, remark) {
+        const timestamp = new Date().toLocaleString('zh-CN');
+        const historyItem = {
+          id: Date.now(),
+          url: url,
+          remark: remark,
+          timestamp: timestamp
+        };
+        
+        // 避免重复添加相同的URL
+        const existingIndex = historyData.findIndex(item => item.url === url);
+        if (existingIndex !== -1) {
+          historyData[existingIndex] = historyItem; // 更新现有记录
+        } else {
+          historyData.unshift(historyItem); // 添加到开头
+        }
+        
+        // 限制历史记录数量（最多50条）
+        if (historyData.length > 50) {
+          historyData = historyData.slice(0, 50);
+        }
+        
+        localStorage.setItem('onedrive-history', JSON.stringify(historyData));
+        displayHistory();
+        
+        // 发送到后端记录日志
+        fetch('/save_history', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(historyItem)
+        }).catch(err => console.log('日志记录失败:', err));
+        
+        showToast('已保存到历史记录！');
+      }
+      
+      // 移除自动保存功能，用户必须手动填写备注后保存
+      
+      // 自动复制解析成功的链接到剪贴板
+      function autoCopyResult() {
+        const resultUrl = document.querySelector('.result-url');
+        if (resultUrl) {
+          const url = resultUrl.textContent.trim();
+          if (url) {
+            silentCopyToClipboard(url);
+            // 静默复制，不显示提示
+          }
+        }
+      }
+      
+      // 搜索历史记录
+      function searchHistory() {
+        const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+        displayHistory(searchTerm);
+      }
+      
+      // 显示历史记录
+      function displayHistory(searchTerm = '') {
+        const historyList = document.getElementById('history-list');
+        
+        // 根据搜索词过滤历史记录
+        let filteredData = historyData;
+        if (searchTerm) {
+          filteredData = historyData.filter(item => 
+            item.remark.toLowerCase().includes(searchTerm)
+          );
+        }
+        
+        if (filteredData.length === 0) {
+          const message = searchTerm ? 
+            `<div style="padding: 20px; text-align: center; color: #6c757d;">未找到包含 "${searchTerm}" 的记录</div>` :
+            '<div style="padding: 20px; text-align: center; color: #6c757d;">暂无历史记录</div>';
+          historyList.innerHTML = message;
+          return;
+        }
+        
+        historyList.innerHTML = filteredData.map(item => `
+          <div class="history-item">
+            <div class="history-time">${item.timestamp}</div>
+            <div class="history-remark-container">
+              <span class="history-remark" id="remark-${item.id}" onclick="editRemark(${item.id})">${highlightSearchTerm(item.remark, searchTerm)}</span>
+              <input type="text" class="history-remark-input" id="input-${item.id}" value="${item.remark}" style="display: none;" onblur="saveRemark(${item.id})" onkeypress="handleRemarkKeypress(event, ${item.id})">
+            </div>
+            <div class="history-url">${item.url}</div>
+            <div class="history-actions">
+              <button class="history-btn history-copy" onclick="copyToClipboard('${item.url}')">复制</button>
+              <a href="${item.url}" download class="history-btn history-download">下载</a>
+              <button class="history-btn history-delete" onclick="deleteHistoryItem(${item.id})">删除</button>
+            </div>
+          </div>
+        `).join('');
+      }
+      
+      // 高亮搜索关键词
+      function highlightSearchTerm(text, searchTerm) {
+        if (!searchTerm) return text;
+        
+        const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        return text.replace(regex, '<mark style="background: #ffeb3b; padding: 1px 2px; border-radius: 2px;">$1</mark>');
+      }
+      
+      // 编辑备注
+      function editRemark(id) {
+        const remarkSpan = document.getElementById(`remark-${id}`);
+        const remarkInput = document.getElementById(`input-${id}`);
+        
+        remarkSpan.style.display = 'none';
+        remarkInput.style.display = 'inline-block';
+        remarkInput.focus();
+        remarkInput.select();
+      }
+      
+      // 保存备注
+      function saveRemark(id) {
+        const remarkSpan = document.getElementById(`remark-${id}`);
+        const remarkInput = document.getElementById(`input-${id}`);
+        const newRemark = remarkInput.value.trim();
+        
+        if (!newRemark) {
+          showToast('备注不能为空！', 'error');
+          remarkInput.focus();
+          return;
+        }
+        
+        // 更新历史数据
+        const itemIndex = historyData.findIndex(item => item.id === id);
+        if (itemIndex !== -1) {
+          historyData[itemIndex].remark = newRemark;
+          localStorage.setItem('onedrive-history', JSON.stringify(historyData));
+          
+          // 同步到后端
+          fetch('/save_history', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(historyData[itemIndex])
+          }).catch(err => console.log('同步失败:', err));
+          
+          showToast('备注已更新！');
+        }
+        
+        // 切换回显示模式
+        remarkSpan.style.display = 'inline-block';
+        remarkInput.style.display = 'none';
+        
+        // 重新显示历史记录以更新内容
+        displayHistory();
+      }
+      
+      // 处理备注输入的按键事件
+      function handleRemarkKeypress(event, id) {
+        if (event.key === 'Enter') {
+          saveRemark(id);
+        } else if (event.key === 'Escape') {
+          // 取消编辑
+          const remarkSpan = document.getElementById(`remark-${id}`);
+          const remarkInput = document.getElementById(`input-${id}`);
+          
+          remarkSpan.style.display = 'inline-block';
+          remarkInput.style.display = 'none';
+          
+          // 恢复原始值
+          const originalRemark = historyData.find(item => item.id === id)?.remark || '';
+          remarkInput.value = originalRemark;
+        }
+      }
+      
+      // 删除历史记录项
+      function deleteHistoryItem(id) {
+        if (confirm('确定要删除这条记录吗？')) {
+          historyData = historyData.filter(item => item.id !== id);
+          localStorage.setItem('onedrive-history', JSON.stringify(historyData));
+          displayHistory();
+        }
+      }
+      
+      // 双击清除URL输入框内容
+      function clearUrlInput() {
+        const urlInput = document.getElementById('share_url');
+        urlInput.value = '';
+        urlInput.focus();
+        showToast('输入框已清空！', 'info');
+      }
+      
+      // 页面加载时显示历史记录
+      document.addEventListener('DOMContentLoaded', function() {
+        displayHistory();
+        
+        // 如果页面有解析结果，自动复制到剪贴板
+        const resultUrl = document.querySelector('.result-url');
+        if (resultUrl) {
+          setTimeout(() => autoCopyResult(), 500); // 延迟500ms确保页面完全加载
+        }
+      });
+    </script>
+  </body>
+</html>
